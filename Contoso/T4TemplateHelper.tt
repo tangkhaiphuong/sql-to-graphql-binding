@@ -1,0 +1,410 @@
+﻿<#@ assembly Name="System.Data" #>
+<#@ assembly Name="System.Linq" #>
+<#@ assembly Name="System.Core" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Data.SqlClient" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Linq" #>
+<#+
+
+    public static string ToPlural(string text){
+
+        // Create a dictionary of exceptions that have to be checked first
+        // This is very much not an exhaustive list!
+        Dictionary<string, string> exceptions = new Dictionary<string, string>() {
+            { "man", "men" },
+            { "woman", "women" },
+            { "child", "children" },
+            { "tooth", "teeth" },
+            { "foot", "feet" },
+            { "mouse", "mice" },
+            { "matrix", "matrices" },
+            { "index", "indices" },
+            { "belief", "beliefs" } };
+
+        if (exceptions.ContainsKey(text.ToLowerInvariant()))
+        {
+            return exceptions[text.ToLowerInvariant()];
+        }
+        else if (text.EndsWith("y", StringComparison.OrdinalIgnoreCase) &&
+                 !text.EndsWith("ay", StringComparison.OrdinalIgnoreCase) &&
+                 !text.EndsWith("ey", StringComparison.OrdinalIgnoreCase) &&
+                 !text.EndsWith("iy", StringComparison.OrdinalIgnoreCase) &&
+                 !text.EndsWith("oy", StringComparison.OrdinalIgnoreCase) &&
+                 !text.EndsWith("uy", StringComparison.OrdinalIgnoreCase))
+        {
+            return text.Substring(0, text.Length - 1) + "ies";
+        }
+        else if (text.EndsWith("us", StringComparison.InvariantCultureIgnoreCase))
+        {
+            // http://en.wikipedia.org/wiki/Plural_form_of_words_ending_in_-us
+            return text + "es";
+        }
+        else if (text.EndsWith("ss", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return text + "es";
+        }
+        else if (text.EndsWith("ix", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return text.Substring(0, text.Length - 2) + "ices";
+        }
+        else if (text.EndsWith("ex", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return text.Substring(0, text.Length - 2) + "ices";
+        }
+        else if (text.EndsWith("s", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return text;
+        }
+        else if (text.EndsWith("x", StringComparison.InvariantCultureIgnoreCase) ||
+                 text.EndsWith("ch", StringComparison.InvariantCultureIgnoreCase) ||
+                 text.EndsWith("sh", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return text + "es";
+        }
+        else if (text.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
+        {
+            return text.Substring(0, text.Length - 1) + "ves";
+        }
+        else if (text.EndsWith("fe", StringComparison.InvariantCultureIgnoreCase) && text.Length > 2)
+        {
+            return text.Substring(0, text.Length - 2) + "ves";
+        }
+        else
+        {
+            return text + "s";
+        }
+    }
+
+    public static string ToPascal(string str)
+    {
+        return Regex.Replace(str, "(?:^|_| +)(.)", match => match.Groups[1].Value.ToUpper());
+    }
+
+    public static string ToCamel(string str)
+    {
+        var word = ToPascal(str);
+        return word.Length > 0 ? word.Substring(0, 1).ToLower() + word.Substring(1) : word;
+    }
+
+    public static string ToHuman(string input)
+    {
+        var PascalCaseWordPartsRegex = new Regex(@"[\p{Lu}]?[\p{Ll}]+|[0-9]+[\p{Ll}]*|[\p{Lu}]+(?=[\p{Lu}][\p{Ll}]|[0-9]|\b)|[\p{Lo}]+",
+            RegexOptions.IgnorePatternWhitespace | RegexOptions.ExplicitCapture | RegexOptions.Compiled);
+        var FreestandingSpacingCharRegex = new Regex(@"\s[-_]|[-_]\s", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        string FromUnderscoreDashSeparatedWords(string input)
+        {
+            return string.Join(" ", input.Split(new[] { '_', '-' }));
+        }
+
+        string FromPascalCase(string input)
+        {
+            var result = string.Join(" ", PascalCaseWordPartsRegex
+                .Matches(input).Cast<Match>()
+                .Select(match => match.Value.ToCharArray().All(char.IsUpper) &&
+                                 (match.Value.Length > 1 || (match.Index > 0 && input[match.Index - 1] == ' ') || match.Value == "I")
+                    ? match.Value
+                    : match.Value.ToLower()));
+
+            if (result.Replace(" ", "").ToCharArray().All(c => char.IsUpper(c)) &&
+                result.Contains(" "))
+            {
+                result = result.ToLower();
+            }
+
+            return result.Length > 0 ? char.ToUpper(result[0]) +
+                                       result.Substring(1, result.Length - 1) : result;
+        }
+
+        // if input is all capitals (e.g. an acronym) then return it without change
+        if (input.ToCharArray().All(char.IsUpper))
+        {
+            return input;
+        }
+
+        // if input contains a dash or underscore which preceeds or follows a space (or both, e.g. free-standing)
+        // remove the dash/underscore and run it through FromPascalCase
+        if (FreestandingSpacingCharRegex.IsMatch(input))
+        {
+            return FromPascalCase(FromUnderscoreDashSeparatedWords(input));
+        }
+
+        if (input.Contains("_") || input.Contains("-"))
+        {
+            return FromUnderscoreDashSeparatedWords(input);
+        }
+
+        return FromPascalCase(input);
+    }
+
+    public static string MakeMethodGenericConstraints(int number, string genericType)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+        {
+            listItem.Add(genericType + i);
+        }
+        if (listItem.Count > 0)
+            output = "<" + string.Join(", ", listItem) + ">";
+        return output;
+    }
+
+    public static string MakeMethodGenericConstraintsAfter(int number, string genericType)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+        {
+            listItem.Add(genericType + i);
+        }
+        if (listItem.Count > 0)
+            output = ", " + string.Join(", ", listItem);
+        return output;
+    }
+
+    public static string MakeMethodGenericConstraintsBefore(int number, string genericType)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(genericType + i);
+        if (listItem.Count > 0)
+            output = string.Join(", ", listItem) + ", ";
+        return output;
+    }
+
+    public static string MakeMethodGenericArgumentsAfter(int number, string genericType, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(genericType + i + " " + arg + i);
+        if (listItem.Count > 0)
+            output = ", " + string.Join(", ", listItem);
+        return output;
+    }
+
+    public static string MakeMethodGenericArgumentsBefore(int number, string genericType, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(genericType + i + " " + arg + i);
+        if (listItem.Count > 0)
+            output = string.Join(", ", listItem) + ", ";
+        return output;
+    }
+
+    public static string MakeMethodGenericArguments(int number, string genericType, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(genericType + i + " " + arg + i);
+        if (listItem.Count > 0)
+            output = string.Join(", ", listItem);
+        return output;
+    }
+
+    public static string MakeArgumentsAfter(int number, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(arg + i);
+        if (listItem.Count > 0)
+            output = ", " + string.Join(", ", listItem);
+        return output;
+    }
+
+    public static string MakeArgumentsBefore(int number, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(arg + i);
+        if (listItem.Count > 0)
+            output = string.Join(", ", listItem) + ", ";
+        return output;
+    }
+
+    public static string MakeArguments(int number, string arg)
+    {
+        var output = "";
+        var listItem = new List<string>();
+        for (var i = 1; i <= number; ++i)
+            listItem.Add(arg + i);
+        if (listItem.Count > 0)
+            output = string.Join(", ", listItem);
+        return output;
+    }
+
+    private class EqualityComparer<T> : IEqualityComparer<T>
+    {
+        private readonly Func<T, T, bool> _func;
+
+        public EqualityComparer(Func<T, T, bool> func) { _func = func;}
+
+        public bool Equals(T x, T y) { return _func(x, y); }
+
+        public int GetHashCode(T obj) { return 0; }
+    }
+
+    public static IEqualityComparer<T> CreateEqualityComparer<T>(Func<T, T, bool> func) { return new EqualityComparer<T>(func); }
+
+    public static string ConvertSqlTypeToDotNetType(string type, bool? isNullable)
+    {
+        var nullableSign =  (isNullable.HasValue && isNullable.Value ? "?": "");
+        switch(type)
+        {
+            case "bigint":
+                return "System.Int64" + nullableSign;
+            case "binary":
+            case "image":
+            case "rowversion":
+            case "timestamp":
+            case "varbinary":
+                return "System.Byte[]";
+            case "tinyint":
+                return "System.Byte" + nullableSign;
+            case "uniqueidentifier":
+                return "System.Guid" + nullableSign;
+            case "bit": 
+                return "System.Boolean" + nullableSign;
+            case "char":
+            case "varchar":
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+            case "text":
+                return "System.String";
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "smalldatetime":
+                return "System.DateTime" + nullableSign;
+            case "datetimeoffset":
+                return "System.DateTimeOffset" + nullableSign;
+            case "int": 
+                return "System.Int32" + nullableSign;
+            case "decimal":
+            case "money":
+            case "numeric":
+            case "smallmoney":
+                return "System.Decimal" + nullableSign;
+            case "float":
+                return "System.Double" + nullableSign;
+            case "real":
+                return "System.Single" + nullableSign;
+            case "smallint":
+                return "System.Int16" + nullableSign;
+            case "sql_variant":
+                return "System.Object";
+            case "time":
+                return "System.TimeSpan" + nullableSign;
+            case "xml":
+                return "System.Xml";
+            case "geometry":
+                return "Microsoft.SqlServer.Types.SqlGeography";
+            default:
+                return "System.Object";
+        }
+    }
+
+    public static string ConvertSqlTypeToDotNetTypeName(string type, bool? isNullable)
+    {
+        var nullableSign =  (isNullable.HasValue && isNullable.Value ? "Nullable": "");
+        switch(type)
+        {
+            case "bigint":
+                return nullableSign + "Int64";
+            case "binary":
+            case "image":
+            case "rowversion":
+            case "timestamp":
+            case "varbinary":
+                return "ByteArray";
+            case "tinyint":
+                return nullableSign + "Byte";
+            case "uniqueidentifier":
+                return nullableSign + "Guid";
+            case "bit": 
+                return nullableSign + "Boolean";
+            case "char":
+            case "varchar":
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+            case "text":
+                return "String";
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "smalldatetime":
+                return nullableSign + "DateTime";
+            case "datetimeoffset":
+                return nullableSign + "DateTimeOffset";
+            case "int": 
+                return nullableSign + "Int32";
+            case "decimal":
+            case "money":
+            case "numeric":
+            case "smallmoney":
+                return nullableSign + "Decimal";
+            case "float":
+                return nullableSign + "Double";
+            case "real":
+                return nullableSign + "Single";
+            case "smallint":
+                return nullableSign + "Int16";
+            case "sql_variant":
+                return "Object";
+            case "time":
+                return nullableSign + "TimeSpan";
+            case "xml":
+                return "Xml";
+            case "geometry":
+                return "SqlGeography";
+            default:
+                return "Object";
+        }
+    }
+
+    public static IEnumerable<IDataRecord> GetTableDefinitions(string connectionString)
+    {
+        var command = @"
+SELECT tab.name                   AS TableName,
+       SCHEMA_NAME(tab.schema_id) AS SchemaName,
+       column_id                  AS ColumnId,
+       col.name                   AS ColumnName,
+       t.name                     AS DataType,
+       col.max_length             AS MaxLength,
+       col.IS_NULLABLE            AS IsNullable
+FROM sys.tables AS tab
+         JOIN sys.columns AS col
+              ON tab.object_id = col.object_id
+         JOIN sys.types AS t
+              ON col.user_type_id = t.user_type_id
+WHERE tab.name <> 'sysdiagrams'
+ORDER BY TableName,
+         ColumnId
+        ";
+
+        using(var conn = new SqlConnection(connectionString))
+        {
+            using(var comm = new SqlCommand(command, conn))
+            {
+                conn.Open();
+                
+                using(var reader = comm.ExecuteReader())
+                {
+                    foreach(var item in Enumerable.Cast<IDataRecord>(reader))
+                        yield return  item;
+                }                
+            }
+        }
+    }
+#>

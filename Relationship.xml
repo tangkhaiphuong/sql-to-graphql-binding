@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<relationships>
+
+	<relationship>
+		<from table="Employee" key="ManagerId"/>
+		<to table="Employee" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="Product" key="SupplierId"/>
+		<to table="Supplier" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="Product" key="CategoryId"/>
+		<to table="Category" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="Order" key="CustomerId"/>
+		<to table="Customer" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="Order" key="EmployeeId"/>
+		<to table="Employee" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="Order" key="ShipperId"/>
+		<to table="Shipper" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="OrderDetail" key="OrderId"/>
+		<to table="Order" key="Id"/>
+	</relationship>
+
+	<relationship>
+		<from table="OrderDetail" key="ProductId"/>
+		<to table="Product" key="Id"/>
+	</relationship>
+
+</relationships>

@@ -1,0 +1,186 @@
+<#@ include file=".\Contoso\T4TemplateHelper.tt" #>
+<#@ assembly name="System.Xml" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Xml.Serialization" #>
+<#+
+    public static string ConnectionString = "Data Source=127.0.0.1;Initial Catalog=ProductShipping;UID=sa;PWD=admin@123";
+
+    public static IList<Relationship> GetRelationships(string filePath)
+    {
+        var serializer = new XmlSerializer(typeof(RelationshipsTag));
+        var result = new List<Relationship>();
+        using (var reader = new StringReader(File.ReadAllText(filePath)))
+        {
+            var relationshipsTag = (RelationshipsTag)serializer.Deserialize(reader);
+            foreach(RelationshipTag item in relationshipsTag.Relationships)
+            {
+                result.Add( 
+                    new Relationship(
+                        new Node(item.From.Schema ?? "dbo", item.From.Table, item.From.Key),
+                        new Node(item.To.Schema ?? "dbo", item.To.Table, item.To.Key),
+                        item.Links.Select(link => 
+                            Tuple.Create(
+                                new Node(link.Schema ?? "dbo", link.Table, link.Key.Split(',')[0].Trim()),
+                                new Node(link.Schema ?? "dbo", link.Table, link.Key.Split(',')[1].Trim())
+                            )
+                        ).ToArray()
+                    ));
+            }
+            return result;
+        }
+    } 
+   
+    [XmlRoot(ElementName="from")]
+    public class FromTag
+    { 
+        [XmlAttribute(AttributeName="schema")] 
+        public String Schema { get; set; }
+
+        [XmlAttribute(AttributeName="table")] 
+        public String Table { get; set; } 
+
+        [XmlAttribute(AttributeName="key")] 
+        public String Key { get; set; } 
+    }
+
+    [XmlRoot(ElementName="link")]
+    public class LinkTag
+    { 
+        [XmlAttribute(AttributeName="schema")] 
+        public String Schema { get; set; }
+
+        [XmlAttribute(AttributeName="table")] 
+        public String Table { get; set; } 
+
+        [XmlAttribute(AttributeName="key")] 
+        public String Key { get; set; } 
+    }
+
+    [XmlRoot(ElementName="to")]
+    public class ToTag
+    { 
+        [XmlAttribute(AttributeName="schema")] 
+        public String Schema { get; set; }
+
+        [XmlAttribute(AttributeName="table")] 
+        public String Table { get; set; } 
+
+        [XmlAttribute(AttributeName="key")] 
+        public String Key { get; set; } 
+    }
+
+    [XmlRoot(ElementName="relationship")]
+    public class RelationshipTag
+    { 
+        [XmlElement(ElementName="from")] 
+        public FromTag From { get; set; } 
+
+        [XmlElement(ElementName="link")] 
+        public List<LinkTag> Links { get; set; } 
+
+        [XmlElement(ElementName="to")] 
+        public ToTag To { get; set; } 
+    }
+
+    [XmlRoot(ElementName="relationships")]
+    public class RelationshipsTag
+    { 
+        [XmlElement(ElementName="relationship")] 
+        public List<RelationshipTag> Relationships { get; set; } 
+    }
+
+    public class TableGroup : IComparable<TableGroup>, IEquatable<TableGroup>
+    {
+        public string SchemaName { get; set; }
+
+        public string TableName { get; set; }
+
+        public int CompareTo(TableGroup other)
+        {
+            if (ReferenceEquals(this, other)) return 0;
+            if (ReferenceEquals(null, other)) return 1;
+            var schemaNameComparison = string.Compare(SchemaName, other.SchemaName, StringComparison.Ordinal);
+            if (schemaNameComparison != 0) return schemaNameComparison;
+            return string.Compare(TableName, other.TableName, StringComparison.Ordinal);
+        }
+
+        public bool Equals(TableGroup other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return SchemaName == other.SchemaName && TableName == other.TableName;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((TableGroup) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((SchemaName != null ? SchemaName.GetHashCode() : 0) * 397) ^ (TableName != null ? TableName.GetHashCode() : 0);
+            }
+        }
+    }
+
+    public static IEnumerable<IGrouping<TableGroup, IDataRecord>> GetUnicornDefinitions()
+    {
+        return GetTableDefinitions(ConnectionString).Where(c => c["TableName"].ToString().IndexOf("_") != 0 && c["ColumnName"].ToString().IndexOf("_") != 0).GroupBy(c=> new TableGroup { SchemaName = c["SchemaName"].ToString(), TableName = c["TableName"].ToString() });
+    }
+
+    public static bool IsSkip(string columnName)
+    {
+        if (string.Equals(columnName, "Id", StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (string.Equals(columnName, "CreatedDate", StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (string.Equals(columnName, "ModifiedDate", StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (string.Equals(columnName, "DeletedDate", StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (string.Equals(columnName, "State", StringComparison.CurrentCultureIgnoreCase)) return true;
+
+        return false;
+    }
+
+    public class Node
+    {
+        public Node(string name, string key)
+        {
+            Schema = "dbo";
+            Name = name;
+            Key = key;
+        }
+
+        public Node(string schema, string name, string key)
+        {
+            Schema = schema;
+            Name = name;
+            Key = key;
+        }
+
+        public string Name { get; }
+
+        public string Key { get; }
+
+        public string Schema { get; set; }
+    }
+
+    public class Relationship
+    {
+        public Relationship(Node start, Node end, params Tuple<Node, Node>[] routes)
+        {
+            Start = start;
+            End = end;
+            Routes = routes;
+        }
+
+        public Node Start { get ; }
+
+        public Node End { get ; }
+
+        public Tuple<Node, Node>[] Routes { get ; }
+    }
+#>

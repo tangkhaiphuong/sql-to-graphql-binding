@@ -1,0 +1,153 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\Binary\Debug</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\Binary\Release</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Queries\UnicornQuery.Resolver.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UnicornQuery.Resolver.Generation.tt</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fluid.Core" Version="2.0.13" />
+    <PackageReference Include="GraphQL.Server.Authorization.AspNetCore" Version="4.4.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.DynamicLinq" Version="5.2.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="5.0.9" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.2.12" />
+    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+    <PackageReference Include="GraphQL" Version="4.5.0" />
+    <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="5.2.6" />
+    <PackageReference Include="GraphQL-Parser" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Contoso.Unicorn.Entities\Contoso.Unicorn.Entities.csproj" />
+    <ProjectReference Include="..\Contoso\Contoso.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Mutations\UnicornMutation.Generation.tt">
+      <LastGenOutput>UnicornMutation.Generation.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="Proxies\Proxy.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Proxy.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Queries\UnicornQuery.Generation.tt">
+      <LastGenOutput>UnicornQuery.Generation.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="Queries\UnicornQuery.Resolver.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>UnicornQuery.Resolver.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Types\ConvertInputType.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ConvertInputType.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Types\ConvertInputType.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ConvertInputType.cs</LastGenOutput>
+    </None>
+    <None Update="Types\InputLinkType.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>InputLinkType.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Types\InputType.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>InputType.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Types\Type.Resolver.Generation.tt">
+      <LastGenOutput>Type.Resolver.Generation.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="Types\Type.Generation.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Type.Generation.cs</LastGenOutput>
+    </None>
+    <None Update="Unicorn.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Unicorn.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Mutations\UnicornMutation.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UnicornMutation.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Proxies\Proxy.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Proxy.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Queries\UnicornQuery.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UnicornQuery.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Queries\UnicornQuery.Resolver.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UnicornQuery.Resolver.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Types\ConvertInputType.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConvertInputType.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Types\InputLinkType.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputLinkType.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Types\InputType.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputType.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Types\Type.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Type.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Types\Type.Resolver.Generation.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Type.Resolver.Generation.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Unicorn.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Unicorn.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>
